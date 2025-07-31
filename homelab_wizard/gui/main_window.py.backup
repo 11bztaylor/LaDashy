@@ -8,7 +8,6 @@ from ..services.definitions import SERVICES
 from ..services.icons import get_icon
 from ..core.scanner import NetworkScanner
 from .network_config import NetworkConfigDialog
-from .config_panel import ServiceConfigPanel
 from .scan_dialog import ScanProgressDialog
 
 class HomelabWizard:
@@ -80,24 +79,12 @@ Current networks configured for scanning:"""
                   command=self.configure_networks).pack(pady=20)
                  
     def create_services_tab(self):
-        """Create services selection tab with config panel"""
+        """Create services selection tab"""
         services_frame = ttk.Frame(self.notebook)
         self.notebook.add(services_frame, text="Services")
         
-        # Create main container with two panels
-        main_container = ttk.Frame(services_frame)
-        main_container.pack(fill='both', expand=True)
-        
-        # Left panel for services
-        left_panel = ttk.Frame(main_container)
-        left_panel.pack(side='left', fill='both', expand=True)
-        
-        # Right panel for configuration
-        self.config_panel = ServiceConfigPanel(main_container)
-        self.config_panel.get_frame().pack(side='right', fill='both', padx=(10, 0))
-        
         # Control buttons
-        control_frame = ttk.Frame(left_panel)
+        control_frame = ttk.Frame(services_frame)
         control_frame.pack(fill='x', pady=10)
         
         ttk.Button(control_frame, text="🔍 Scan Network",
@@ -113,7 +100,8 @@ Current networks configured for scanning:"""
                   command=self.clear_all).pack(side='left', padx=5)
         
         # Services list
-        self.create_service_list(left_panel)
+        self.create_service_list(services_frame)
+        
     def create_discovered_tab(self):
         """Create discovered services tab"""
         discovered_frame = ttk.Frame(self.notebook)
@@ -167,8 +155,7 @@ Current networks configured for scanning:"""
                 var = tk.BooleanVar()
                 self.service_vars[service["name"]] = var
                 
-                cb = ttk.Checkbutton(cat_frame, text=service["name"], variable=var,
-                                    command=lambda s=service["name"]: self.on_service_toggle(s))
+                cb = ttk.Checkbutton(cat_frame, text=service["name"], variable=var)
                 cb.pack(anchor='w', pady=2)
         
         canvas.pack(side="left", fill="both", expand=True)
@@ -244,15 +231,6 @@ Current networks configured for scanning:"""
                 # Auto-check the service
                 if service['name'] in self.service_vars:
                     self.service_vars[service['name']].set(True)
-                    # Show config panel for first service
-                    if not hasattr(self, '_first_service_shown'):
-                        self._first_service_shown = True
-                        host_info = {
-                            'host': ip,
-                            'ports': service.get('ports', []),
-                            'hostname': hostname
-                        }
-                        self.config_panel.show_service_config(service['name'], host_info)
         
         # Switch to discovered tab
         self.notebook.select(2)
@@ -261,27 +239,6 @@ Current networks configured for scanning:"""
         total_services = sum(len(h['services']) for h in self.discovered_services.values())
         self.status_label.config(text=f"Found {total_services} services")
         
-    
-    def on_service_toggle(self, service_name):
-        """Handle service checkbox toggle"""
-        if self.service_vars[service_name].get():
-            # Service was checked - show config
-            # Find if we have discovered info for this service
-            host_info = None
-            for ip, info in self.discovered_services.items():
-                for service in info.get('services', []):
-                    if service['name'] == service_name:
-                        host_info = {
-                            'host': ip,
-                            'ports': service.get('ports', []),
-                            'hostname': info.get('hostname', 'Unknown')
-                        }
-                        break
-                if host_info:
-                    break
-            
-            self.config_panel.show_service_config(service_name, host_info)
-
     def select_all(self):
         """Select all services"""
         for var in self.service_vars.values():

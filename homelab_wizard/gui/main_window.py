@@ -8,6 +8,7 @@ from ..services.definitions import SERVICES
 from ..services.icons import get_icon
 from ..core.scanner import NetworkScanner
 from .network_config import NetworkConfigDialog
+from .enhanced_service_list import EnhancedServiceList
 from .config_panel import ServiceConfigPanel
 from .scan_dialog import ScanProgressDialog
 
@@ -15,6 +16,7 @@ class HomelabWizard:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("🏠 Homelab Documentation Wizard")
+        self.root.configure(bg='#1e1e1e')
         self.root.geometry("1000x700")
         
         # Storage
@@ -38,14 +40,20 @@ class HomelabWizard:
         
     def create_header(self):
         """Create header section"""
-        header_frame = tk.Frame(self.root, bg='#1e1e1e', height=80)
+        header_frame = tk.Frame(self.root, bg='#2d2d2d', height=80)
         header_frame.pack(fill='x')
         header_frame.pack_propagate(False)
         
-        title = tk.Label(header_frame, text="🏠 Homelab Documentation Wizard",
-                        font=('Arial', 24, 'bold'), bg='#1e1e1e', fg='white')
+        title = tk.Label(
+            header_frame, 
+            text="🏠 Homelab Documentation Wizard",
+            font=('Arial', 24, 'bold'), 
+            bg='#2d2d2d', 
+            fg='white'
+        )
         title.pack(pady=20)
         
+    
     def create_content(self):
         """Create main content area"""
         self.notebook = ttk.Notebook(self.root)
@@ -142,38 +150,26 @@ Current networks configured for scanning:"""
         self.discovered_tree.configure(yscrollcommand=scrollbar.set)
         
     def create_service_list(self, parent):
-        """Create the service selection list"""
-        # Create scrollable frame
-        canvas = tk.Canvas(parent)
-        scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
+        """Create the modern service selection list"""
+        from ..services.definitions import SERVICES
         
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        # Initialize service_vars first
+        for category, services in SERVICES.items():
+            for service in services:
+                if service["name"] not in self.service_vars:
+                    self.service_vars[service["name"]] = tk.BooleanVar()
+        
+        # Create modern service list
+        self.service_list = EnhancedServiceList(
+            parent, 
+            self.service_vars,
+            self.on_service_click,
+            self.on_service_toggle
         )
         
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        # Add services
+        # Add all categories and services
         for category, services in SERVICES.items():
-            # Category frame
-            cat_frame = ttk.LabelFrame(scrollable_frame, text=category, padding=10)
-            cat_frame.pack(fill='x', padx=10, pady=5)
-            
-            # Add services
-            for service in services:
-                var = tk.BooleanVar()
-                self.service_vars[service["name"]] = var
-                
-                cb = ttk.Checkbutton(cat_frame, text=service["name"], variable=var,
-                                    command=lambda s=service["name"]: self.on_service_toggle(s))
-                cb.pack(anchor='w', pady=2)
-        
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-        
+            self.service_list.add_category(category, services)
     def create_footer(self):
         """Create footer with buttons"""
         footer_frame = ttk.Frame(self.root)
@@ -250,7 +246,7 @@ Current networks configured for scanning:"""
                         host_info = {
                             'host': ip,
                             'ports': service.get('ports', []),
-                            'hostname': hostname
+                            'hostname': info.get('hostname', 'Unknown')
                         }
                         self.config_panel.show_service_config(service['name'], host_info)
         
@@ -264,24 +260,34 @@ Current networks configured for scanning:"""
     
     def on_service_toggle(self, service_name):
         """Handle service checkbox toggle"""
-        if self.service_vars[service_name].get():
-            # Service was checked - show config
-            # Find if we have discovered info for this service
-            host_info = None
-            for ip, info in self.discovered_services.items():
-                for service in info.get('services', []):
-                    if service['name'] == service_name:
-                        host_info = {
-                            'host': ip,
-                            'ports': service.get('ports', []),
-                            'hostname': info.get('hostname', 'Unknown')
-                        }
-                        break
-                if host_info:
+        # Always show config panel when toggled
+        self.show_service_config(service_name)
+        
+    def on_service_click(self, service_name):
+        """Handle clicking on service name"""
+        # Show config panel without changing checkbox
+        self.show_service_config(service_name)
+        
+    def show_service_config(self, service_name):
+        """Show configuration for a service"""
+        # Highlight the service
+        self.service_list.highlight_service(service_name)
+        
+        # Find if we have discovered info for this service
+        host_info = None
+        for ip, info in self.discovered_services.items():
+            for service in info.get('services', []):
+                if service['name'] == service_name:
+                    host_info = {
+                        'host': ip,
+                        'ports': service.get('ports', []),
+                        'hostname': info.get('hostname', 'Unknown')
+                    }
                     break
-            
-            self.config_panel.show_service_config(service_name, host_info)
-
+            if host_info:
+                break
+        
+        self.config_panel.show_service_config(service_name, host_info)
     def select_all(self):
         """Select all services"""
         for var in self.service_vars.values():
@@ -292,6 +298,12 @@ Current networks configured for scanning:"""
         for var in self.service_vars.values():
             var.set(False)
         
+    
+    def update_service_status(self, service_name, status):
+        """Update visual status of a service"""
+        if hasattr(self, 'service_list'):
+            self.service_list.update_service_status(service_name, status)
+
     def generate_docs(self):
         """Generate documentation"""
         selected = [name for name, var in self.service_vars.items() if var.get()]

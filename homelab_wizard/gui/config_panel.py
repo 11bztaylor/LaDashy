@@ -4,6 +4,8 @@ Service configuration panel for connection details
 import tkinter as tk
 from tkinter import ttk
 import json
+from ..gui.service_info_panel import ServiceInfoPanel
+from ..collectors.manager import CollectorManager
 from ..core.connection_tester import ConnectionTester
 import os
 
@@ -13,6 +15,7 @@ class ServiceConfigPanel:
         self.current_service = None
         self.config_vars = {}
         self.tester = ConnectionTester()
+        self.collector_manager = CollectorManager()
         self.configs = self.load_configs()
         
         self.setup_ui()
@@ -41,6 +44,11 @@ class ServiceConfigPanel:
         self.test_btn.pack(side='left', padx=(0, 5))
         
         # Save button
+        # Collect button
+        self.collect_btn = ttk.Button(button_frame, text="Collect Data", 
+                                     command=self.collect_data, state='disabled')
+        self.collect_btn.pack(side='left', padx=(0, 5))
+        
         self.save_btn = ttk.Button(button_frame, text="Save Configuration", 
                                   command=self.save_config, state='disabled')
         self.save_btn.pack(side='left')
@@ -48,6 +56,13 @@ class ServiceConfigPanel:
         # Status label
         self.status_label = ttk.Label(button_frame, text="", foreground='gray')
         self.status_label.pack(side='left', padx=(10, 0))
+        
+        # Add separator
+        ttk.Separator(self.frame, orient='horizontal').pack(fill='x', pady=(15, 0))
+        
+        # Info panel
+        self.info_panel = ServiceInfoPanel(self.frame, bg_color='#f0f0f0')
+        self.info_panel.get_frame().pack(fill='both', expand=True)
         
     def load_configs(self):
         """Load saved configurations"""
@@ -72,6 +87,7 @@ class ServiceConfigPanel:
         self.service_label.config(text=f"Configure: {service_name}")
         self.save_btn.config(state='normal')
         self.test_btn.config(state='normal')
+        self.collect_btn.config(state='normal')
         self.status_label.config(text='')
         
         # Clear current config
@@ -181,6 +197,16 @@ class ServiceConfigPanel:
         
         # Show success
         self.service_label.config(text=f"✓ {self.current_service} configuration saved!")
+        
+        # Mark as configured in main window
+        try:
+                main_window = self.parent
+                while main_window and not hasattr(main_window, 'update_service_status'):
+                    main_window = getattr(main_window, 'master', None)
+        except:
+                main_window = None
+        if hasattr(main_window, 'update_service_status'):
+            main_window.update_service_status(self.current_service, 'configured')
         self.parent.after(2000, lambda: self.service_label.config(text=f"Configure: {self.current_service}"))
 
     
@@ -205,8 +231,73 @@ class ServiceConfigPanel:
         
         if success:
             self.status_label.config(text=f"✓ {message}", foreground='green')
+            # Show service info on successful connection
+            self.info_panel.show_service_info(self.current_service, config, self.collector_manager)
+            # Notify main window
+            # Navigate up to main window - handle different widget hierarchies
+            try:
+                # Try different paths to find main window
+                main_window = self.parent
+                while main_window and not hasattr(main_window, 'update_service_status'):
+                    main_window = getattr(main_window, 'master', None)
+            except:
+                main_window = None
+            if hasattr(main_window, 'update_service_status'):
+                main_window.update_service_status(self.current_service, 'connected')
         else:
             self.status_label.config(text=f"✗ {message}", foreground='red')
+            # Notify main window
+            # Navigate up to main window - handle different widget hierarchies
+            try:
+                # Try different paths to find main window
+                main_window = self.parent
+                while main_window and not hasattr(main_window, 'update_service_status'):
+                    main_window = getattr(main_window, 'master', None)
+            except:
+                main_window = None
+            if hasattr(main_window, 'update_service_status'):
+                main_window.update_service_status(self.current_service, 'error')
+
+    
+    def collect_data(self):
+        """Collect data from the service"""
+        if not self.current_service:
+            return
+            
+        # Get current config
+        config = {}
+        for key, var in self.config_vars.items():
+            value = var.get()
+            if value:
+                config[key] = value
+                
+        # Update status
+        self.status_label.config(text="Collecting data...", foreground='blue')
+        self.parent.update()
+        
+        # Collect data
+        data = self.collector_manager.collect_service_data(self.current_service, config)
+        
+        if data.get('status') == 'success':
+            # Show summary
+            basic = data.get('basic', {})
+            detailed = data.get('detailed', {})
+            
+            summary = f"✓ Data collected! "
+            if self.current_service == "Plex" and detailed.get('libraries'):
+                summary += f"Found {len(detailed['libraries'])} libraries"
+            elif self.current_service == "Radarr" and 'total_movies' in detailed:
+                summary += f"Found {detailed['total_movies']} movies"
+            
+            self.status_label.config(text=summary, foreground='green')
+            
+            # TODO: Store this data for documentation generation
+            print(f"Collected data for {self.current_service}:", data)
+        else:
+            self.status_label.config(
+                text=f"✗ Collection failed: {data.get('error', 'Unknown error')}", 
+                foreground='red'
+            )
 
     def get_frame(self):
         """Get the panel frame"""

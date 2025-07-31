@@ -15,7 +15,9 @@ class NetworkConfigDialog:
         
         # Make dialog modal
         self.dialog.transient(parent)
-        self.dialog.grab_set()
+        # Wait for window to be visible before grab
+        self.dialog.update_idletasks()
+        self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_viewable() else None)
         
         self.setup_ui()
         

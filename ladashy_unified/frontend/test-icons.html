@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .icon-item {
+            background: #2d2d2d;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .icon-item img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            margin-bottom: 10px;
+        }
+        .icon-name {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .icon-status {
+            font-size: 12px;
+            color: #96ceb4;
+        }
+        .icon-status.missing {
+            color: #ff6b6b;
+        }
+        h1 {
+            color: #4ecdc4;
+        }
+        .theme-switch {
+            margin-bottom: 20px;
+        }
+        body.light {
+            background: #f5f5f5;
+            color: #333;
+        }
+        body.light .icon-item {
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>Service Icons Test Page</h1>
+    <div class="theme-switch">
+        <button onclick="toggleTheme()">Toggle Light/Dark Theme</button>
+    </div>
+    <div class="icon-grid" id="iconGrid"></div>
+
+    <script src="service-icons.js"></script>
+    <script>
+        const services = [
+            'Plex', 'Jellyfin', 'Emby', 'Radarr', 'Sonarr', 'Lidarr',
+            'Bazarr', 'Prowlarr', 'Overseerr', 'Ombi', 'Tautulli',
+            'qBittorrent', 'Transmission', 'SABnzbd', 'NZBGet',
+            'Nginx Proxy Manager', 'Traefik', 'Pi-hole', 'AdGuard Home',
+            'Portainer', 'Grafana', 'Prometheus', 'InfluxDB', 'Uptime Kuma',
+            'Home Assistant', 'Node-RED', 'Nextcloud', 'Syncthing'
+        ];
+
+        function toggleTheme() {
+            document.body.classList.toggle('light');
+            localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
+            renderIcons();
+        }
+
+        function renderIcons() {
+            const grid = document.getElementById('iconGrid');
+            grid.innerHTML = '';
+            
+            services.forEach(service => {
+                const div = document.createElement('div');
+                div.className = 'icon-item';
+                
+                const iconHtml = getServiceIcon(service);
+                const theme = getCurrentTheme();
+                
+                div.innerHTML = `
+                    ${iconHtml}
+                    <div class="icon-name">${service}</div>
+                    <div class="icon-status" id="status-${service.toLowerCase().replace(/\s+/g, '-')}">
+                        Checking...
+                    </div>
+                `;
+                
+                grid.appendChild(div);
+                
+                // Check if icon loads
+                const img = div.querySelector('img');
+                if (img) {
+                    img.onload = function() {
+                        document.getElementById(`status-${service.toLowerCase().replace(/\s+/g, '-')}`).textContent = '✓ Loaded';
+                    };
+                    img.onerror = function() {
+                        document.getElementById(`status-${service.toLowerCase().replace(/\s+/g, '-')}`).className = 'icon-status missing';
+                        document.getElementById(`status-${service.toLowerCase().replace(/\s+/g, '-')}`).textContent = '✗ Missing';
+                    };
+                }
+            });
+        }
+
+        // Initialize
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light');
+        }
+        renderIcons();
+    </script>
+</body>
+</html>

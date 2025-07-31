@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LaDashy - Homelab Documentation Generator</title>
+    <style>
+        /* Keep all existing styles */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #3d3d3d;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --accent-primary: #4ecdc4;
+            --accent-secondary: #45b7d1;
+            --accent-success: #96ceb4;
+            --accent-warning: #ffd93d;
+            --accent-error: #ff6b6b;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            color: var(--accent-primary);
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: var(--bg-secondary);
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card h3 {
+            color: var(--accent-success);
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-card .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: var(--accent-primary);
+        }
+        
+        .controls {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        .btn {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+            margin-right: 10px;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn:hover {
+            background: var(--accent-secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(78, 205, 196, 0.3);
+        }
+        
+        .btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        
+        .btn-secondary:hover {
+            background: #4d4d4d;
+        }
+        
+        .services {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+        
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .service-card {
+            background: var(--bg-tertiary);
+            padding: 20px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+            position: relative;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+            border-color: var(--accent-primary);
+        }
+        
+        .service-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+        
+        .service-name {
+            color: var(--accent-primary);
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .service-icon {
+            font-size: 1.5em;
+        }
+        
+        .service-info {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+        
+        .service-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9em;
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .status-configured { background: var(--accent-success); }
+        .status-discovered { background: var(--accent-warning); }
+        .status-error { background: var(--accent-error); }
+        
+        .service-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+        
+        .progress {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        .progress.active { display: block; }
+        
+        .progress-text {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+        
+        .progress-bar {
+            background: var(--bg-tertiary);
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+        
+        .option:hover {
+            background: #4d4d4d;
+        }
+        
+        .option input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--accent-primary);
+        }
+        
+        .option label {
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .network-input {
+            background: var(--bg-tertiary);
+            border: 1px solid #555;
+            color: var(--text-primary);
+            padding: 12px;
+            border-radius: 5px;
+            width: 100%;
+            margin-bottom: 15px;
+            font-size: 1em;
+        }
+        
+        .network-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            color: var(--accent-primary);
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+        
+        .close-btn:hover {
+            background: var(--bg-tertiary);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border: 1px solid #555;
+            color: var(--text-primary);
+            border-radius: 5px;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--bg-secondary);
+            padding: 15px 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: none;
+            align-items: center;
+            gap: 10px;
+            z-index: 2000;
+        }
+        
+        .toast.show {
+            display: flex;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .toast.success {
+            border-left: 4px solid var(--accent-success);
+        }
+        
+        .toast.error {
+            border-left: 4px solid var(--accent-error);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state h3 {
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--bg-tertiary);
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+        
+        .tab:hover {
+            color: var(--text-primary);
+        }
+        
+        .tab.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+
+        /* New styles for manual configuration */
+        .manual-add-section {
+            background: var(--bg-tertiary);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .service-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            background: var(--bg-secondary);
+            border-radius: 5px;
+        }
+
+        .service-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .service-option:hover {
+            background: #4d4d4d;
+            border-color: var(--accent-primary);
+        }
+
+        .service-option.selected {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .service-icon-img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            vertical-align: middle;
+        }
+        
+        .service-option .service-icon-img {
+            width: 20px;
+            height: 20px;
+        }
+        
+        /* Theme toggle button */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-secondary);
+            border: none;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 1.2em;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        
+        .theme-toggle:hover {
+            background: var(--bg-tertiary);
+            transform: scale(1.1);
+        }
+        
+        /* Light theme */
+        body.light-theme {
+            --bg-primary: #f5f5f5;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #e0e0e0;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --accent-primary: #2196F3;
+            --accent-secondary: #1976D2;
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+        <span id="theme-icon">🌙</span>
+    </button>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>🏠 LaDashy</h1>
+                <p>Homelab Documentation Generator</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="saveState()">💾 Save State</button>
+                <button class="btn btn-secondary" onclick="loadState()">📂 Load State</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Hosts Found</h3>
+                <div class="value" id="stat-hosts">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Services</h3>
+                <div class="value" id="stat-services">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Configured</h3>
+                <div class="value" id="stat-configured">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Data Collected</h3>
+                <div class="value" id="stat-collected">0</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h2>Service Discovery & Configuration</h2>
+            
+            <!-- Manual Add Section -->
+            <div class="manual-add-section">
+                <h3>➕ Manually Add Services</h3>
+                <p style="color: var(--text-secondary); margin: 10px 0;">
+                    Don't want to scan? Add your services manually:
+                </p>
+                <button class="btn" onclick="showManualAdd()">
+                    <span>➕</span> Add Service Manually
+                </button>
+            </div>
+            
+            <!-- Network Scanner Section -->
+            <div style="margin: 20px 0;">
+                <h3>🔍 Network Scanner</h3>
+                <p style="color: var(--text-secondary); margin: 10px 0;">
+                    Or automatically discover services on your network:
+                </p>
+                <label>Network Range (comma-separated for multiple):</label>
+                <input type="text" id="network-range" class="network-input" 
+                       value="192.168.1.0/24" placeholder="192.168.1.0/24, 10.0.0.0/24">
+                <button class="btn" id="btn-scan" onclick="startScan()">
+                    <span>🔍</span> Scan Network
+                </button>
+            </div>
+            
+            <button class="btn" id="btn-generate" onclick="showGenerateOptions()" disabled>
+                <span>📄</span> Generate Documentation
+            </button>
+        </div>
+
+        <div class="progress" id="progress">
+            <div class="progress-text" id="progress-text">Initializing scan...</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="services" id="services" style="display: none;">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('discovered')">All Services</button>
+                <button class="tab" onclick="switchTab('configured')">Configured Services</button>
+                <button class="tab" onclick="switchTab('collected')">Collected Data</button>
+            </div>
+            
+            <div class="tab-content active" id="tab-discovered">
+                <div class="service-grid" id="service-grid"></div>
+            </div>
+            
+            <div class="tab-content" id="tab-configured">
+                <div class="service-grid" id="configured-grid"></div>
+            </div>
+            
+            <div class="tab-content" id="tab-collected">
+                <div class="service-grid" id="collected-grid"></div>
+            </div>
+        </div>
+
+        <!-- Service Configuration Modal -->
+        <div class="modal" id="config-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="config-title">Configure Service</h2>
+                    <button class="close-btn" onclick="closeConfigModal()">×</button>
+                </div>
+                <div id="config-form"></div>
+            </div>
+        </div>
+
+        <!-- Manual Add Service Modal -->
+        <div class="modal" id="manual-add-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Add Service Manually</h2>
+                    <button class="close-btn" onclick="closeManualAddModal()">×</button>
+                </div>
+                <div>
+                    <div class="form-group">
+                        <label>Service Type</label>
+                        <input type="text" id="manual-search" placeholder="Search services..." 
+                               oninput="filterServices()" class="network-input">
+                        <div class="service-selector" id="service-selector"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Host/IP Address</label>
+                        <input type="text" id="manual-host" placeholder="192.168.1.100 or hostname">
+                    </div>
+                    <div class="form-group">
+                        <label>Port</label>
+                    <div class="form-group">
+                        <label>API Key (if required)</label>
+                        <input type="text" id="manual-api-key" placeholder="API key for service">
+                    </div>
+                    <div class="form-group">
+                    <div class="form-group">
+                        <label>API Key (if required)</label>
+                        <input type="text" id="manual-api-key" placeholder="API key for service">
+                    </div>
+                        <label>API Key (if required)</label>
+                    <div class="form-group">
+                        <label>API Key (if required)</label>
+                        <input type="text" id="manual-api-key" placeholder="API key for service">
+                    </div>
+                        <input type="text" id="manual-api-key" placeholder="API key for service">
+                    <div class="form-group">
+                        <label>API Key (if required)</label>
+                        <input type="text" id="manual-api-key" placeholder="API key for service">
+                    </div>
+                    </div>
+                    <div class="form-group">
+                        <label>API Key (if required)</label>
+                        <input type="text" id="manual-api-key" placeholder="API key for service">
+                    </div>
+                        <input type="text" id="manual-port" placeholder="Default port will be used">
+                    <div class="form-group">
+                        <label>API Key (if required)</label>
+                        <input type="text" id="manual-api-key" placeholder="API key for service">
+                    </div>
+                        <small style="color: var(--text-secondary); display: block; margin-top: 5px;">
+                    <div class="form-group">
+                        <label>API Key (if required)</label>
+                        <input type="text" id="manual-api-key" placeholder="API key for service">
+                    </div>
+                            Default port will be filled when you select a service
+                    <div class="form-group">
+                        <label>API Key (if required)</label>
+                        <input type="text" id="manual-api-key" placeholder="API key for service">
+                    </div>
+                        </small>
+                    <div class="form-group">
+                        <label>API Key (if required)</label>
+                        <input type="text" id="manual-api-key" placeholder="API key for service">
+                    </div>
+                    </div>
+                    <div class="form-group">
+                        <label>API Key (if required)</label>
+                        <input type="text" id="manual-api-key" placeholder="API key for service">
+                    </div>
+                    <div style="margin-top: 20px; display: flex; gap: 10px;">
+                        <button class="btn" onclick="addManualService()">
+                            <span>➕</span> Add Service
+                        </button>
+                        <button class="btn btn-secondary" onclick="closeManualAddModal()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Generate Options Modal -->
+        <div class="modal" id="generate-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Documentation Options</h2>
+                    <button class="close-btn" onclick="hideGenerateOptions()">×</button>
+                </div>
+                <div class="options">
+                    <div class="option">
+                        <input type="checkbox" id="opt-network" checked>
+                        <label for="opt-network">Network Topology Diagram</label>
+                    </div>
+                    <div class="option">
+                        <input type="checkbox" id="opt-dependencies" checked>
+                        <label for="opt-dependencies">Service Dependencies</label>
+                    </div>
+                    <div class="option">
+                        <input type="checkbox" id="opt-docker" checked>
+                        <label for="opt-docker">Docker Compose Files</label>
+                    </div>
+                    <div class="option">
+                        <input type="checkbox" id="opt-security" checked>
+                        <label for="opt-security">Security Audit</label>
+                    </div>
+                    <div class="option">
+                        <input type="checkbox" id="opt-json" checked>
+                        <label for="opt-json">JSON Export</label>
+                    </div>
+                    <div class="option">
+                        <input type="checkbox" id="opt-html" checked>
+                        <label for="opt-html">HTML Dashboard</label>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button class="btn" onclick="generateDocs()">
+                        <span>🚀</span> Generate & Download
+                    </button>
+                    <button class="btn btn-secondary" onclick="hideGenerateOptions()">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div class="toast" id="toast">
+            <span id="toast-message"></span>
+        </div>
+    </div>
+
+    <script src="service-icons.js"></script>
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        let scanInterval = null;
+        let services = {};
+        let configs = {};
+        let collectedData = {};
+        let currentService = null;
+        let selectedServiceType = null;
+
+        // All available services
+        const AVAILABLE_SERVICES = [
+            // Media
+            { name: 'Plex', category: 'Media', defaultPort: 32400 },
+            { name: 'Jellyfin', category: 'Media', defaultPort: 8096 },
+            { name: 'Emby', category: 'Media', defaultPort: 8096 },
+            { name: 'Radarr', category: 'Media', defaultPort: 7878 },
+            { name: 'Sonarr', category: 'Media', defaultPort: 8989 },
+            { name: 'Prowlarr', category: 'Media', defaultPort: 9696 },
+            { name: 'Bazarr', category: 'Media', defaultPort: 6767 },
+            { name: 'Lidarr', category: 'Media', defaultPort: 8686 },
+            { name: 'Readarr', category: 'Media', defaultPort: 8787 },
+            { name: 'Overseerr', category: 'Media', defaultPort: 5055 },
+            { name: 'Ombi', category: 'Media', defaultPort: 3579 },
+            { name: 'Tautulli', category: 'Media', defaultPort: 8181 },
+            
+            // Network
+            { name: 'Nginx Proxy Manager', category: 'Network', defaultPort: 81 },
+            { name: 'Traefik', category: 'Network', defaultPort: 8080 },
+            { name: 'Pi-hole', category: 'Network', defaultPort: 80 },
+            { name: 'AdGuard Home', category: 'Network', defaultPort: 3000 },
+            
+            // Management
+            { name: 'Portainer', category: 'Management', defaultPort: 9000 },
+            { name: 'Cockpit', category: 'Management', defaultPort: 9090 },
+            
+            // Monitoring
+            { name: 'Grafana', category: 'Monitoring', defaultPort: 3000 },
+            { name: 'Prometheus', category: 'Monitoring', defaultPort: 9090 },
+            { name: 'InfluxDB', category: 'Monitoring', defaultPort: 8086 },
+            { name: 'Uptime Kuma', category: 'Monitoring', defaultPort: 3001 },
+            
+            // Home Automation
+            { name: 'Home Assistant', category: 'Home Automation', defaultPort: 8123 },
+            { name: 'Node-RED', category: 'Home Automation', defaultPort: 1880 },
+            
+            // Storage
+            { name: 'Nextcloud', category: 'Storage', defaultPort: 443 },
+            { name: 'MinIO', category: 'Storage', defaultPort: 9000 },
+            { name: 'Syncthing', category: 'Storage', defaultPort: 8384 },
+        ];
+
+        function showManualAdd() {
+            document.getElementById('manual-add-modal').classList.add('active');
+            populateServiceSelector();
+        }
+
+        function closeManualAddModal() {
+            document.getElementById('manual-add-modal').classList.remove('active');
+            selectedServiceType = null;
+        }
+
+        function populateServiceSelector() {
+            const selector = document.getElementById('service-selector');
+            selector.innerHTML = '';
+            
+            AVAILABLE_SERVICES.forEach(service => {
+                const option = document.createElement('div');
+                option.className = 'service-option';
+                option.onclick = () => selectServiceType(service);
+                option.innerHTML = `
+                    <span class="service-icon">${getServiceIcon(service.name)}</span>
+                    <span>${service.name}</span>
+                `;
+                selector.appendChild(option);
+            });
+        }
+
+        function filterServices() {
+            const search = document.getElementById('manual-search').value.toLowerCase();
+            const options = document.querySelectorAll('.service-option');
+            
+            options.forEach(option => {
+                const text = option.textContent.toLowerCase();
+                option.style.display = text.includes(search) ? 'flex' : 'none';
+            });
+        }
+
+        function selectServiceType(service) {
+            selectedServiceType = service;
+            
+            // Update UI
+            document.querySelectorAll('.service-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            event.target.closest('.service-option').classList.add('selected');
+            
+            // Set default port but keep it editable
+            const portInput = document.getElementById('manual-port');
+            portInput.value = service.defaultPort;
+            portInput.placeholder = ``Default: ${service.defaultPort}``;
+        }
+
+        async function addManualService() {
+            if (!selectedServiceType) {
+                showToast('Please select a service type', 'error');
+                return;
+            }
+            
+            const host = document.getElementById('manual-host').value.trim();
+            if (!host) {
+                showToast('Please enter a host/IP address', 'error');
+                return;
+            }
+            
+            const portValue = document.getElementById('manual-port').value || selectedServiceType.defaultPort;
+            const port = parseInt(portValue);
+            
+            // Validate port
+            if (isNaN(port) || port < 1 || port > 65535) {
+                showToast('Please enter a valid port number (1-65535)', 'error');
+                return;
+            }
+            
+            // Save config if API key provided
+            const apiKey = document.getElementById('manual-api-key').value;
+            const key = `${selectedServiceType.name}_${host}`;
+            if (apiKey) {
+                configs[key] = {
+                    host: host,
+                    api_key: apiKey
+                };
+            }
+            // Add to services
+            if (!services[host]) {
+                services[host] = {
+                    hostname: host,
+                    services: []
+                };
+            }
+            
+            // Save config if API key provided
+            const apiKey = document.getElementById('manual-api-key').value;
+            if (apiKey) {
+                const key = `${selectedServiceType.name}_${host}`;
+                configs[key] = {
+                    host: host,
+                    api_key: apiKey
+                };
+            }
+            services[host].services.push({
+                name: selectedServiceType.name,
+                ports: [port],
+                confidence: 1.0,
+                device_type: 'manual',
+                configured: true
+            });
+            
+            // Update UI
+            updateServiceGrid();
+            closeManualAddModal();
+            showToast(`Added ${selectedServiceType.name} on ${host}:${port}`, 'success');
+            
+            // Enable generate button
+            document.getElementById('btn-generate').disabled = false;
+            document.getElementById('services').style.display = 'block';
+            
+            // Update stats
+            updateStats();
+        }
+
+        async function startScan() {
+            const networks = document.getElementById('network-range').value
+                .split(',')
+                .map(n => n.trim())
+                .filter(n => n);
+            
+            if (networks.length === 0) {
+                showToast('Please enter at least one network range', 'error');
+                return;
+            }
+            
+            document.getElementById('btn-scan').disabled = true;
+            document.getElementById('progress').classList.add('active');
+            
+            try {
+                const response = await fetch(`${API_URL}/scan`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ networks })
+                });
+                
+                if (response.ok) {
+                    showToast('Network scan started!', 'success');
+                    scanInterval = setInterval(checkScanStatus, 1000);
+                } else {
+                    throw new Error('Failed to start scan');
+                }
+            } catch (error) {
+                showToast('Failed to start scan: ' + error.message, 'error');
+                document.getElementById('btn-scan').disabled = false;
+                document.getElementById('progress').classList.remove('active');
+            }
+        }
+
+        async function checkScanStatus() {
+            try {
+                const response = await fetch(`${API_URL}/scan/status`);
+                const status = await response.json();
+                
+                document.getElementById('progress-text').textContent = status.progress || 'Scanning...';
+                document.getElementById('stat-hosts').textContent = status.hosts_found || 0;
+                document.getElementById('stat-services').textContent = status.services_found || 0;
+                
+                // Update progress bar
+                if (status.progress.includes('complete')) {
+                    document.getElementById('progress-fill').style.width = '100%';
+                } else {
+                    // Estimate progress
+                    const progress = Math.min((status.services_found || 0) * 10, 90);
+                    document.getElementById('progress-fill').style.width = progress + '%';
+                }
+                
+                if (!status.scanning) {
+                    clearInterval(scanInterval);
+                    document.getElementById('btn-scan').disabled = false;
+                    document.getElementById('progress').classList.remove('active');
+                    
+                    if (status.error) {
+                        showToast('Scan error: ' + status.error, 'error');
+                    } else {
+                        showToast('Scan complete!', 'success');
+                        loadServices();
+                    }
+                }
+            } catch (error) {
+                console.error('Status check error:', error);
+            }
+        }
+
+        async function loadServices() {
+            try {
+                const response = await fetch(`${API_URL}/services`);
+                const scannedServices = await response.json();
+                
+                // Merge with existing manually added services
+                for (const [ip, hostInfo] of Object.entries(scannedServices)) {
+                    if (services[ip]) {
+                        // Merge services, avoiding duplicates
+                        const existingNames = services[ip].services.map(s => s.name);
+                        for (const service of hostInfo.services) {
+                            if (!existingNames.includes(service.name)) {
+                                services[ip].services.push(service);
+                            }
+                        }
+                    } else {
+                        services[ip] = hostInfo;
+                    }
+                }
+                
+                updateServiceGrid();
+                document.getElementById('services').style.display = 'block';
+                document.getElementById('btn-generate').disabled = Object.keys(services).length === 0;
+                updateStats();
+                
+            } catch (error) {
+                showToast('Failed to load services: ' + error.message, 'error');
+            }
+        }
+
+        function updateServiceGrid() {
+            const grid = document.getElementById('service-grid');
+            grid.innerHTML = '';
+            
+            if (Object.keys(services).length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <h3>No services yet</h3>
+                        <p>Add services manually or run a network scan</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            for (const [ip, hostInfo] of Object.entries(services)) {
+                for (const service of hostInfo.services || []) {
+                    const key = `${service.name}_${ip}`;
+                    // For manual services, check if they have API config
+                    if (service.device_type === 'manual' && !configs[key] && document.getElementById('manual-api-key')?.value) {
+                        configs[key] = { host: ip, api_key: document.getElementById('manual-api-key').value };
+                    }
+                    const isConfigured = !!configs[key];
+                    const hasData = !!collectedData[key];
+                    
+                    const card = document.createElement('div');
+                    card.className = 'service-card';
+                    card.innerHTML = `
+                        <div class="service-header">
+                            <div>
+                                <div class="service-name">
+                                    <span class="service-icon">${getServiceIcon(service.name)}</span>
+                                    ${service.name}
+                                </div>
+                                <div class="service-status">
+                                    <span class="status-indicator status-${isConfigured ? 'configured' : 'discovered'}"></span>
+                                    <span>${isConfigured ? 'Configured' : (service.device_type === 'manual' ? 'Added Manually' : 'Discovered')}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="service-info">
+                            <strong>Host:</strong> ${hostInfo.hostname} (${ip})<br>
+                            <strong>Ports:</strong> ${service.ports.join(', ')}<br>
+                            ${service.device_type !== 'manual' ? ``<strong>Confidence:</strong> ${(service.confidence * 100).toFixed(0)}%<br>`` : ''}
+                            <strong>Type:</strong> ${service.device_type || 'Unknown'}
+                        </div>
+                        <div class="service-actions">
+                            <button class="btn btn-small" onclick="configureService('${service.name}', '${ip}')">
+                                ${isConfigured ? '⚙️ Edit Config' : '➕ Configure'}
+                            </button>
+                            ${isConfigured ? `
+                                <button class="btn btn-small btn-secondary" onclick="testService('${service.name}', '${ip}')">
+                                    🔗 Test
+                                </button>
+                            ` : ''}
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                }
+            }
+        }
+
+        async function configureService(serviceName, host) {
+            currentService = { name: serviceName, host: host };
+            const key = `${serviceName}_${host}`;
+            
+            document.getElementById('config-title').textContent = `Configure ${serviceName}`;
+            
+            // Get existing config
+            const config = configs[key] || {};
+            
+            // Build form based on service type
+            let formHtml = '';
+            
+            // Common fields
+            formHtml += `
+                <div class="form-group">
+                    <label>Host</label>
+                    <input type="text" id="config-host" value="${host}" readonly>
+                </div>
+            `;
+            
+            // Service-specific fields
+            if (serviceName.toLowerCase().includes('plex')) {
+                formHtml += `
+                    <div class="form-group">
+                        <label>Plex Token</label>
+                        <input type="text" id="config-token" placeholder="Your Plex token" 
+                               value="${config.token || ''}">
+                    </div>
+                `;
+            } else if (['radarr', 'sonarr', 'prowlarr', 'bazarr'].some(s => serviceName.toLowerCase().includes(s))) {
+                formHtml += `
+                    <div class="form-group">
+                        <label>API Key</label>
+                        <input type="text" id="config-api_key" placeholder="API key from settings" 
+                               value="${config.api_key || ''}">
+                    </div>
+                `;
+            } else if (serviceName.toLowerCase().includes('jellyfin')) {
+                formHtml += `
+                    <div class="form-group">
+                        <label>API Key</label>
+                        <input type="text" id="config-api_key" placeholder="Jellyfin API key" 
+                               value="${config.api_key || ''}">
+                    </div>
+                `;
+            } else if (serviceName.toLowerCase().includes('portainer')) {
+                formHtml += `
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="config-username" placeholder="Admin username" 
+                               value="${config.username || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="config-password" placeholder="Admin password" 
+                               value="${config.password || ''}">
+                    </div>
+                `;
+            } else {
+                // Generic config
+                formHtml += `
+                    <div class="form-group">
+                        <label>Username (if required)</label>
+                        <input type="text" id="config-username" placeholder="Username" 
+                               value="${config.username || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>Password (if required)</label>
+                        <input type="password" id="config-password" placeholder="Password" 
+                               value="${config.password || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label>API Key (if required)</label>
+                        <input type="text" id="config-api_key" placeholder="API key" 
+                               value="${config.api_key || ''}">
+                    </div>
+                `;
+            }
+            
+            formHtml += `
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button class="btn" onclick="saveConfig()">💾 Save</button>
+                    <button class="btn btn-secondary" onclick="closeConfigModal()">Cancel</button>
+                </div>
+            `;
+            
+            document.getElementById('config-form').innerHTML = formHtml;
+            document.getElementById('config-modal').classList.add('active');
+        }
+
+        async function saveConfig() {
+            if (!currentService) return;
+            
+            const key = `${currentService.name}_${currentService.host}`;
+            const config = { host: currentService.host };
+            
+            // Collect form values
+            const fields = ['token', 'api_key', 'username', 'password'];
+            for (const field of fields) {
+                const input = document.getElementById(`config-${field}`);
+                if (input && input.value) {
+                    config[field] = input.value;
+                }
+            }
+            
+            try {
+                const response = await fetch(
+                    `${API_URL}/services/${currentService.name}/${currentService.host}/config`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(config)
+                    }
+                );
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    configs[key] = config;
+                    
+                    if (result.data) {
+                        collectedData[key] = result.data;
+                        showToast('Configuration saved and data collected!', 'success');
+                    } else {
+                        showToast('Configuration saved!', 'success');
+                    }
+                    
+                    closeConfigModal();
+                    updateServiceGrid();
+                    updateStats();
+                } else {
+                    throw new Error(result.error || 'Failed to save configuration');
+                }
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function testService(serviceName, host) {
+            const key = `${serviceName}_${host}`;
+            const config = configs[key];
+            
+            if (!config) {
+                showToast('Please configure the service first', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(
+                    `${API_URL}/services/${serviceName}/${host}/test`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(config)
+                    }
+                );
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showToast(`✅ ${result.message}`, 'success');
+                } else {
+                    showToast(`❌ ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showToast('Connection test failed: ' + error.message, 'error');
+            }
+        }
+
+        function closeConfigModal() {
+            document.getElementById('config-modal').classList.remove('active');
+            currentService = null;
+        }
+
+        function showGenerateOptions() {
+            document.getElementById('generate-modal').classList.add('active');
+        }
+
+        function hideGenerateOptions() {
+            document.getElementById('generate-modal').classList.remove('active');
+        }
+
+        async function generateDocs() {
+            const options = {
+                network_topology: document.getElementById('opt-network').checked,
+                service_dependencies: document.getElementById('opt-dependencies').checked,
+                docker_compose: document.getElementById('opt-docker').checked,
+                security_audit: document.getElementById('opt-security').checked,
+                json: document.getElementById('opt-json').checked,
+                html: document.getElementById('opt-html').checked
+            };
+            
+            showToast('Generating documentation...', 'success');
+            
+            try {
+                const response = await fetch(`${API_URL}/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ options })
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `ladashy_docs_${new Date().toISOString().slice(0, 10)}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    hideGenerateOptions();
+                    showToast('Documentation generated and downloaded!', 'success');
+                } else {
+                    throw new Error('Generation failed');
+                }
+            } catch (error) {
+                showToast('Failed to generate documentation: ' + error.message, 'error');
+            }
+        }
+
+        async function saveState() {
+            try {
+                const response = await fetch(`${API_URL}/state/save`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                showToast('State saved successfully!', 'success');
+            } catch (error) {
+                showToast('Failed to save state: ' + error.message, 'error');
+            }
+        }
+
+        async function loadState() {
+            try {
+                const response = await fetch(`${API_URL}/state/load`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showToast(`State loaded! ${result.services} services found`, 'success');
+                    loadServices();
+                } else {
+                    showToast('No saved state found', 'error');
+                }
+            } catch (error) {
+                showToast('Failed to load state: ' + error.message, 'error');
+            }
+        }
+
+        function switchTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            
+            // Update content based on tab
+            if (tab === 'configured') {
+                updateConfiguredGrid();
+            } else if (tab === 'collected') {
+                updateCollectedGrid();
+            }
+        }
+
+        function updateConfiguredGrid() {
+            const grid = document.getElementById('configured-grid');
+            grid.innerHTML = '';
+            
+            let hasConfigured = false;
+            
+            for (const [ip, hostInfo] of Object.entries(services)) {
+                for (const service of hostInfo.services || []) {
+                    const key = `${service.name}_${ip}`;
+                    if (configs[key]) {
+                        hasConfigured = true;
+                        const card = createServiceCard(service, hostInfo, ip, true);
+                        grid.appendChild(card);
+                    }
+                }
+            }
+            
+            if (!hasConfigured) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <h3>No configured services yet</h3>
+                        <p>Configure services from the All Services tab</p>
+                    </div>
+                `;
+            }
+        }
+
+        function updateCollectedGrid() {
+            const grid = document.getElementById('collected-grid');
+            grid.innerHTML = '';
+            
+            if (Object.keys(collectedData).length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <h3>No data collected yet</h3>
+                        <p>Configure services to collect data</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            for (const [key, data] of Object.entries(collectedData)) {
+                const [serviceName, ...hostParts] = key.split('_');
+                const host = hostParts.join('_');
+                
+                const card = document.createElement('div');
+                card.className = 'service-card';
+                card.innerHTML = `
+                    <div class="service-header">
+                        <div>
+                            <div class="service-name">
+                                <span class="service-icon">${getServiceIcon(serviceName)}</span>
+                                ${serviceName}
+                            </div>
+                            <div class="service-status">
+                                <span class="status-indicator status-configured"></span>
+                                <span>Data Available</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="service-info">
+                        <strong>Host:</strong> ${host}<br>
+                        <strong>Last Updated:</strong> ${data.last_updated ? new Date(data.last_updated).toLocaleString() : 'Unknown'}<br>
+                        ${formatCollectedData(data)}
+                    </div>
+                `;
+                grid.appendChild(card);
+            }
+        }
+
+        function formatCollectedData(data) {
+            let html = '';
+            
+            // Show key data points
+            if (data.version) html += `<strong>Version:</strong> ${data.version}<br>`;
+            if (data.libraries) html += `<strong>Libraries:</strong> ${data.libraries.length}<br>`;
+            if (data.movies) html += `<strong>Movies:</strong> ${data.movies}<br>`;
+            if (data.series) html += `<strong>Series:</strong> ${data.series}<br>`;
+            if (data.domains_blocked) html += `<strong>Domains Blocked:</strong> ${data.domains_blocked.toLocaleString()}<br>`;
+            if (data.dns_queries_today) html += `<strong>DNS Queries Today:</strong> ${data.dns_queries_today.toLocaleString()}<br>`;
+            
+            return html;
+        }
+
+        function createServiceCard(service, hostInfo, ip, showData = false) {
+            const key = `${service.name}_${ip}`;
+                    // For manual services, check if they have API config
+                    if (service.device_type === 'manual' && !configs[key] && document.getElementById('manual-api-key')?.value) {
+                        configs[key] = { host: ip, api_key: document.getElementById('manual-api-key').value };
+                    }
+            const isConfigured = !!configs[key];
+            const hasData = !!collectedData[key];
+            
+            const card = document.createElement('div');
+            card.className = 'service-card';
+            card.innerHTML = `
+                <div class="service-header">
+                    <div>
+                        <div class="service-name">
+                            <span class="service-icon">${getServiceIcon(service.name)}</span>
+                            ${service.name}
+                        </div>
+                        <div class="service-status">
+                            <span class="status-indicator status-${isConfigured ? 'configured' : 'discovered'}"></span>
+                            <span>${isConfigured ? 'Configured' : (service.device_type === 'manual' ? 'Added Manually' : 'Discovered')}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="service-info">
+                    <strong>Host:</strong> ${hostInfo.hostname} (${ip})<br>
+                    <strong>Ports:</strong> ${service.ports.join(', ')}<br>
+                    ${service.device_type !== 'manual' ? ``<strong>Confidence:</strong> ${(service.confidence * 100).toFixed(0)}%<br>`` : ''}
+                    <strong>Type:</strong> ${service.device_type || 'Unknown'}
+                    ${showData && hasData ? '<br>' + formatCollectedData(collectedData[key]) : ''}
+                </div>
+                <div class="service-actions">
+                    <button class="btn btn-small" onclick="configureService('${service.name}', '${ip}')">
+                        ${isConfigured ? '⚙️ Edit Config' : '➕ Configure'}
+                    </button>
+                    ${isConfigured ? `
+                        <button class="btn btn-small btn-secondary" onclick="testService('${service.name}', '${ip}')">
+                            🔗 Test
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+            return card;
+        }
+
+        function updateStats() {
+            let totalServices = 0;
+            let configuredCount = 0;
+            
+            for (const [ip, hostInfo] of Object.entries(services)) {
+                for (const service of hostInfo.services || []) {
+                    totalServices++;
+                    const key = `${service.name}_${ip}`;
+                    if (configs[key]) configuredCount++;
+                }
+            }
+            
+            document.getElementById('stat-hosts').textContent = Object.keys(services).length;
+            document.getElementById('stat-services').textContent = totalServices;
+            document.getElementById('stat-configured').textContent = configuredCount;
+            document.getElementById('stat-collected').textContent = Object.keys(collectedData).length;
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            
+            toast.className = `toast ${type} show`;
+            toastMessage.textContent = message;
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+
+        // Theme handling
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.classList.contains('light-theme') ? 'light' : 'dark';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            if (newTheme === 'light') {
+                body.classList.add('light-theme');
+                document.getElementById('theme-icon').textContent = '☀️';
+            } else {
+                body.classList.remove('light-theme');
+                document.getElementById('theme-icon').textContent = '🌙';
+            }
+            
+            localStorage.setItem('theme', newTheme);
+            
+            // Reload all service icons with new theme
+            document.querySelectorAll('.service-icon').forEach(iconContainer => {
+                const serviceName = iconContainer.getAttribute('data-service');
+                if (serviceName) {
+                    iconContainer.innerHTML = getServiceIcon(serviceName);
+                }
+            });
+        }
+        
+        // Initialize theme on load
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+                document.getElementById('theme-icon').textContent = '☀️';
+            }
+        }
+
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            initTheme();
+            loadServices();
+            document.getElementById('services').style.display = 'block'; // Always show services section
+        });
+
+        // Handle modal clicks
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>
+<script src="update-icons.js"></script>

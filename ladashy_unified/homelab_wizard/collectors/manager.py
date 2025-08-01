@@ -5,6 +5,9 @@ from typing import Dict, Any, Optional, Tuple
 from .plex_collector import PlexCollector
 from .radarr_collector import RadarrCollector
 from .sonarr_collector import SonarrCollector
+from .jellyfin_collector import JellyfinCollector
+from .portainer_collector import PortainerCollector
+from .pihole_collector import PiholeCollector
 from .base_collector import BaseCollector
 
 class CollectorManager:
@@ -13,7 +16,9 @@ class CollectorManager:
             "Plex": PlexCollector,
             "Radarr": RadarrCollector,
             "Sonarr": SonarrCollector,
-            # Add more collectors as implemented
+            "Jellyfin": JellyfinCollector,
+            "Portainer": PortainerCollector,
+            "Pi-hole": PiholeCollector,
         }
         
     def get_collector(self, service_name: str, config: Dict[str, str]) -> Optional[BaseCollector]:

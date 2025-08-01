@@ -1,7 +1,0 @@
-version: '3.8'
-
-networks:
-  homelab:
-    driver: bridge
-
-services:

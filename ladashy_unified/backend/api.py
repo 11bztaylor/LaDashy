@@ -143,7 +143,7 @@ def service_config(service_name, host):
         )
         
         if service_info:
-            collector = manager.get_collector(service_name.lower(), config)
+            collector = manager.get_collector(service_name, config)  # Don't lowercase - manager handles it
             if collector:
                 port = service_info['ports'][0] if service_info.get('ports') else 8080
                 
@@ -167,28 +167,66 @@ def service_config(service_name, host):
 @app.route('/api/services/<service_name>/<host>/test', methods=['POST'])
 def test_service(service_name, host):
     """Test service connection"""
-    config = request.json
-    manager = CollectorManager()
-    collector = manager.get_collector(service_name.lower(), config)
-    
-    if not collector:
-        return jsonify({"error": "No collector available for this service"}), 404
-    
-    # Find service port
-    port = 8080
-    for h_ip, h_info in app.discovered_services.items():
-        if h_ip == host:
-            for svc in h_info.get('services', []):
-                if svc['name'] == service_name:
-                    port = svc['ports'][0] if svc.get('ports') else 8080
-                    break
-    
-    if collector.test_connection(host, port, config):
-        return jsonify({"status": "success", "message": "Connection successful!"})
-    else:
-        return jsonify({"status": "failed", "message": "Could not connect to service"}), 400
+    try:
+        config = request.json or {}
+        
+        # Ensure we have required fields
+        if 'host' not in config:
+            config['host'] = host
+        
+        # Get port from config or use service default
+        if 'port' not in config:
+            # Try to find port from discovered services
+            port = None
+            for h_ip, h_info in app.discovered_services.items():
+                if h_ip == host:
+                    for svc in h_info.get('services', []):
+                        if svc['name'].lower() == service_name.lower():
+                            port = svc['ports'][0] if svc.get('ports') else None
+                            break
+            
+            # If not found in discovered, use service defaults
+            if port is None:
+                from homelab_wizard.services.definitions import SERVICES
+                service_def = SERVICES.get(service_name.lower(), {})
+                port = service_def.get('default_port', 8080)
+            
+            config['port'] = port
+        
+        # Create collector manager and get collector WITH CONFIG
+        manager = CollectorManager()
+        app.logger.info(f"Looking for collector: {service_name.lower()}")
+        app.logger.info(f"Available collectors: {list(manager.collectors.keys())}")
+        collector = manager.get_collector(service_name, config)  # Don't lowercase - manager handles it  # FIXED: Added config parameter
+        
+        if not collector:
+            return jsonify({
+                "status": "error",
+                "message": f"No collector available for service: {service_name}"
+            }), 404
+        
+        # Test the connection
+        # test_connection() takes no arguments - the collector already has the config
+        success = collector.test_connection()
+        
+        if success:
+            return jsonify({
+                "status": "success", 
+                "message": "Connection successful!"
+            })
+        else:
+            return jsonify({
+                "status": "failed", 
+                "message": "Could not connect to service. Please check your settings."
+            }), 400
+            
+    except Exception as e:
+        app.logger.error(f"Error testing service {service_name}: {str(e)}")
+        return jsonify({
+            "status": "error",
+            "message": f"Error testing connection: {str(e)}"
+        }), 500
 
-@app.route('/api/services/definitions')
 def get_service_definitions():
     """Get all service definitions"""
     return jsonify(get_all_services())

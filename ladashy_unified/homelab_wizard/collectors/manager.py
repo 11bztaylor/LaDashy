@@ -18,7 +18,16 @@ class CollectorManager:
         
     def get_collector(self, service_name: str, config: Dict[str, str]) -> Optional[BaseCollector]:
         """Get appropriate collector for a service"""
+        # Try exact match first
         collector_class = self.collectors.get(service_name)
+        
+        # If not found, try case-insensitive match
+        if not collector_class:
+            for key, value in self.collectors.items():
+                if key.lower() == service_name.lower():
+                    collector_class = value
+                    break
+        
         if collector_class:
             return collector_class(config)
         return None

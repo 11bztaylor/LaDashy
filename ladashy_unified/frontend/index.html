@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LaDashy - Homelab Documentation Generator</title>
     <style>
-        /* Keep all existing styles */
+        /* Reset and Variables */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         :root {
@@ -587,6 +587,7 @@
     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
         <span id="theme-icon">🌙</span>
     </button>
+    
     <div class="container">
         <div class="header">
             <div>
@@ -709,50 +710,10 @@
                     </div>
                     <div class="form-group">
                         <label>Port</label>
-                    <div class="form-group">
-                        <label>API Key (if required)</label>
-                        <input type="text" id="manual-api-key" placeholder="API key for service">
-                    </div>
-                    <div class="form-group">
-                    <div class="form-group">
-                        <label>API Key (if required)</label>
-                        <input type="text" id="manual-api-key" placeholder="API key for service">
-                    </div>
-                        <label>API Key (if required)</label>
-                    <div class="form-group">
-                        <label>API Key (if required)</label>
-                        <input type="text" id="manual-api-key" placeholder="API key for service">
-                    </div>
-                        <input type="text" id="manual-api-key" placeholder="API key for service">
-                    <div class="form-group">
-                        <label>API Key (if required)</label>
-                        <input type="text" id="manual-api-key" placeholder="API key for service">
-                    </div>
-                    </div>
-                    <div class="form-group">
-                        <label>API Key (if required)</label>
-                        <input type="text" id="manual-api-key" placeholder="API key for service">
-                    </div>
                         <input type="text" id="manual-port" placeholder="Default port will be used">
-                    <div class="form-group">
-                        <label>API Key (if required)</label>
-                        <input type="text" id="manual-api-key" placeholder="API key for service">
-                    </div>
                         <small style="color: var(--text-secondary); display: block; margin-top: 5px;">
-                    <div class="form-group">
-                        <label>API Key (if required)</label>
-                        <input type="text" id="manual-api-key" placeholder="API key for service">
-                    </div>
                             Default port will be filled when you select a service
-                    <div class="form-group">
-                        <label>API Key (if required)</label>
-                        <input type="text" id="manual-api-key" placeholder="API key for service">
-                    </div>
                         </small>
-                    <div class="form-group">
-                        <label>API Key (if required)</label>
-                        <input type="text" id="manual-api-key" placeholder="API key for service">
-                    </div>
                     </div>
                     <div class="form-group">
                         <label>API Key (if required)</label>
@@ -818,6 +779,7 @@
 
     <script src="service-icons.js"></script>
     <script>
+        // Global variables and configuration
         const API_URL = 'http://localhost:5000/api';
         let scanInterval = null;
         let services = {};
@@ -868,6 +830,17 @@
             { name: 'Syncthing', category: 'Storage', defaultPort: 8384 },
         ];
 
+        // Helper function to get service icon
+        function getServiceIcon(serviceName) {
+            // This function should be defined in service-icons.js
+            // For now, return a default emoji if not found
+            if (typeof window.getServiceIcon === 'function') {
+                return window.getServiceIcon(serviceName);
+            }
+            return '📦'; // Default icon
+        }
+
+        // Manual Service Management Functions
         function showManualAdd() {
             document.getElementById('manual-add-modal').classList.add('active');
             populateServiceSelector();
@@ -876,6 +849,11 @@
         function closeManualAddModal() {
             document.getElementById('manual-add-modal').classList.remove('active');
             selectedServiceType = null;
+            // Clear form
+            document.getElementById('manual-host').value = '';
+            document.getElementById('manual-port').value = '';
+            document.getElementById('manual-api-key').value = '';
+            document.getElementById('manual-search').value = '';
         }
 
         function populateServiceSelector() {
@@ -913,10 +891,10 @@
             });
             event.target.closest('.service-option').classList.add('selected');
             
-            // Set default port but keep it editable
+            // Set default port
             const portInput = document.getElementById('manual-port');
             portInput.value = service.defaultPort;
-            portInput.placeholder = ``Default: ${service.defaultPort}``;
+            portInput.placeholder = `Default: ${service.defaultPort}`;
         }
 
         async function addManualService() {
@@ -940,15 +918,6 @@
                 return;
             }
             
-            // Save config if API key provided
-            const apiKey = document.getElementById('manual-api-key').value;
-            const key = `${selectedServiceType.name}_${host}`;
-            if (apiKey) {
-                configs[key] = {
-                    host: host,
-                    api_key: apiKey
-                };
-            }
             // Add to services
             if (!services[host]) {
                 services[host] = {
@@ -957,21 +926,35 @@
                 };
             }
             
+            // Check if service already exists
+            const existingService = services[host].services.find(s => 
+                s.name === selectedServiceType.name && s.ports.includes(port)
+            );
+            
+            if (existingService) {
+                showToast('This service is already added', 'error');
+                return;
+            }
+            
             // Save config if API key provided
             const apiKey = document.getElementById('manual-api-key').value;
+            const key = `${selectedServiceType.name}_${host}`;
+            
             if (apiKey) {
-                const key = `${selectedServiceType.name}_${host}`;
                 configs[key] = {
                     host: host,
+                    port: port,
                     api_key: apiKey
                 };
             }
+            
+            // Add service
             services[host].services.push({
                 name: selectedServiceType.name,
                 ports: [port],
                 confidence: 1.0,
                 device_type: 'manual',
-                configured: true
+                configured: !!apiKey
             });
             
             // Update UI
@@ -987,6 +970,7 @@
             updateStats();
         }
 
+        // Network Scanning Functions
         async function startScan() {
             const networks = document.getElementById('network-range').value
                 .split(',')
@@ -1002,19 +986,25 @@
             document.getElementById('progress').classList.add('active');
             
             try {
+                console.log("Starting scan with networks:", networks);
+                
                 const response = await fetch(`${API_URL}/scan`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ networks })
                 });
                 
+                const data = await response.json();
+                console.log("Scan response:", data);
+                
                 if (response.ok) {
                     showToast('Network scan started!', 'success');
                     scanInterval = setInterval(checkScanStatus, 1000);
                 } else {
-                    throw new Error('Failed to start scan');
+                    throw new Error(data.error || 'Failed to start scan');
                 }
             } catch (error) {
+                console.error("Scan error:", error);
                 showToast('Failed to start scan: ' + error.message, 'error');
                 document.getElementById('btn-scan').disabled = false;
                 document.getElementById('progress').classList.remove('active');
@@ -1031,7 +1021,7 @@
                 document.getElementById('stat-services').textContent = status.services_found || 0;
                 
                 // Update progress bar
-                if (status.progress.includes('complete')) {
+                if (status.progress && status.progress.includes('complete')) {
                     document.getElementById('progress-fill').style.width = '100%';
                 } else {
                     // Estimate progress
@@ -1048,7 +1038,7 @@
                         showToast('Scan error: ' + status.error, 'error');
                     } else {
                         showToast('Scan complete!', 'success');
-                        loadServices();
+                        await loadServices();
                     }
                 }
             } catch (error) {
@@ -1086,67 +1076,7 @@
             }
         }
 
-        function updateServiceGrid() {
-            const grid = document.getElementById('service-grid');
-            grid.innerHTML = '';
-            
-            if (Object.keys(services).length === 0) {
-                grid.innerHTML = `
-                    <div class="empty-state" style="grid-column: 1/-1;">
-                        <h3>No services yet</h3>
-                        <p>Add services manually or run a network scan</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            for (const [ip, hostInfo] of Object.entries(services)) {
-                for (const service of hostInfo.services || []) {
-                    const key = `${service.name}_${ip}`;
-                    // For manual services, check if they have API config
-                    if (service.device_type === 'manual' && !configs[key] && document.getElementById('manual-api-key')?.value) {
-                        configs[key] = { host: ip, api_key: document.getElementById('manual-api-key').value };
-                    }
-                    const isConfigured = !!configs[key];
-                    const hasData = !!collectedData[key];
-                    
-                    const card = document.createElement('div');
-                    card.className = 'service-card';
-                    card.innerHTML = `
-                        <div class="service-header">
-                            <div>
-                                <div class="service-name">
-                                    <span class="service-icon">${getServiceIcon(service.name)}</span>
-                                    ${service.name}
-                                </div>
-                                <div class="service-status">
-                                    <span class="status-indicator status-${isConfigured ? 'configured' : 'discovered'}"></span>
-                                    <span>${isConfigured ? 'Configured' : (service.device_type === 'manual' ? 'Added Manually' : 'Discovered')}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="service-info">
-                            <strong>Host:</strong> ${hostInfo.hostname} (${ip})<br>
-                            <strong>Ports:</strong> ${service.ports.join(', ')}<br>
-                            ${service.device_type !== 'manual' ? ``<strong>Confidence:</strong> ${(service.confidence * 100).toFixed(0)}%<br>`` : ''}
-                            <strong>Type:</strong> ${service.device_type || 'Unknown'}
-                        </div>
-                        <div class="service-actions">
-                            <button class="btn btn-small" onclick="configureService('${service.name}', '${ip}')">
-                                ${isConfigured ? '⚙️ Edit Config' : '➕ Configure'}
-                            </button>
-                            ${isConfigured ? `
-                                <button class="btn btn-small btn-secondary" onclick="testService('${service.name}', '${ip}')">
-                                    🔗 Test
-                                </button>
-                            ` : ''}
-                        </div>
-                    `;
-                    grid.appendChild(card);
-                }
-            }
-        }
-
+        // Service Configuration Functions
         async function configureService(serviceName, host) {
             currentService = { name: serviceName, host: host };
             const key = `${serviceName}_${host}`;
@@ -1168,7 +1098,9 @@
             `;
             
             // Service-specific fields
-            if (serviceName.toLowerCase().includes('plex')) {
+            const serviceNameLower = serviceName.toLowerCase();
+            
+            if (serviceNameLower.includes('plex')) {
                 formHtml += `
                     <div class="form-group">
                         <label>Plex Token</label>
@@ -1176,7 +1108,7 @@
                                value="${config.token || ''}">
                     </div>
                 `;
-            } else if (['radarr', 'sonarr', 'prowlarr', 'bazarr'].some(s => serviceName.toLowerCase().includes(s))) {
+            } else if (['radarr', 'sonarr', 'prowlarr', 'bazarr', 'lidarr', 'readarr'].some(s => serviceNameLower.includes(s))) {
                 formHtml += `
                     <div class="form-group">
                         <label>API Key</label>
@@ -1184,7 +1116,7 @@
                                value="${config.api_key || ''}">
                     </div>
                 `;
-            } else if (serviceName.toLowerCase().includes('jellyfin')) {
+            } else if (serviceNameLower.includes('jellyfin')) {
                 formHtml += `
                     <div class="form-group">
                         <label>API Key</label>
@@ -1192,7 +1124,7 @@
                                value="${config.api_key || ''}">
                     </div>
                 `;
-            } else if (serviceName.toLowerCase().includes('portainer')) {
+            } else if (serviceNameLower.includes('portainer')) {
                 formHtml += `
                     <div class="form-group">
                         <label>Username</label>
@@ -1267,6 +1199,16 @@
                 if (response.ok) {
                     configs[key] = config;
                     
+                    // Mark service as configured
+                    for (const [ip, hostInfo] of Object.entries(services)) {
+                        if (ip === currentService.host) {
+                            const service = hostInfo.services.find(s => s.name === currentService.name);
+                            if (service) {
+                                service.configured = true;
+                            }
+                        }
+                    }
+                    
                     if (result.data) {
                         collectedData[key] = result.data;
                         showToast('Configuration saved and data collected!', 'success');
@@ -1306,10 +1248,10 @@
                 
                 const result = await response.json();
                 
-                if (response.ok) {
-                    showToast(`✅ ${result.message}`, 'success');
+                if (response.ok && result.success) {
+                    showToast(`✅ ${result.message || 'Connection successful!'}`, 'success');
                 } else {
-                    showToast(`❌ ${result.message}`, 'error');
+                    showToast(`❌ ${result.message || 'Connection failed'}`, 'error');
                 }
             } catch (error) {
                 showToast('Connection test failed: ' + error.message, 'error');
@@ -1321,6 +1263,7 @@
             currentService = null;
         }
 
+        // Documentation Generation Functions
         function showGenerateOptions() {
             document.getElementById('generate-modal').classList.add('active');
         }
@@ -1342,10 +1285,14 @@
             showToast('Generating documentation...', 'success');
             
             try {
-                const response = await fetch(`${API_URL}/generate`, {
+                const response = await fetch(`${API_URL}/dashboard/generate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ options })
+                    body: JSON.stringify({ 
+                        options,
+                        services: services,
+                        configs: configs
+                    })
                 });
                 
                 if (response.ok) {
@@ -1369,10 +1316,17 @@
             }
         }
 
+        // State Management Functions
         async function saveState() {
             try {
                 const response = await fetch(`${API_URL}/state/save`, {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        services: services,
+                        configs: configs,
+                        collectedData: collectedData
+                    })
                 });
                 
                 const result = await response.json();
@@ -1384,19 +1338,84 @@
 
         async function loadState() {
             try {
-                const response = await fetch(`${API_URL}/state/load`, {
-                    method: 'POST'
-                });
+                const response = await fetch(`${API_URL}/state/load`);
                 
                 if (response.ok) {
                     const result = await response.json();
-                    showToast(`State loaded! ${result.services} services found`, 'success');
-                    loadServices();
+                    
+                    if (result.services) services = result.services;
+                    if (result.configs) configs = result.configs;
+                    if (result.collectedData) collectedData = result.collectedData;
+                    
+                    updateServiceGrid();
+                    updateStats();
+                    document.getElementById('services').style.display = 'block';
+                    document.getElementById('btn-generate').disabled = Object.keys(services).length === 0;
+                    
+                    showToast(`State loaded! ${Object.keys(services).length} hosts found`, 'success');
                 } else {
                     showToast('No saved state found', 'error');
                 }
             } catch (error) {
                 showToast('Failed to load state: ' + error.message, 'error');
+            }
+        }
+
+        // UI Update Functions
+        function updateServiceGrid() {
+            const grid = document.getElementById('service-grid');
+            grid.innerHTML = '';
+            
+            if (Object.keys(services).length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1/-1;">
+                        <h3>No services yet</h3>
+                        <p>Add services manually or run a network scan</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            for (const [ip, hostInfo] of Object.entries(services)) {
+                for (const service of hostInfo.services || []) {
+                    const key = `${service.name}_${ip}`;
+                    const isConfigured = !!configs[key] || service.configured;
+                    const hasData = !!collectedData[key];
+                    
+                    const card = document.createElement('div');
+                    card.className = 'service-card';
+                    card.innerHTML = `
+                        <div class="service-header">
+                            <div>
+                                <div class="service-name">
+                                    <span class="service-icon" data-service="${service.name}">${getServiceIcon(service.name)}</span>
+                                    ${service.name}
+                                </div>
+                                <div class="service-status">
+                                    <span class="status-indicator status-${isConfigured ? 'configured' : 'discovered'}"></span>
+                                    <span>${isConfigured ? 'Configured' : (service.device_type === 'manual' ? 'Added Manually' : 'Discovered')}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="service-info">
+                            <strong>Host:</strong> ${hostInfo.hostname} (${ip})<br>
+                            <strong>Ports:</strong> ${service.ports.join(', ')}<br>
+                            ${service.device_type !== 'manual' ? `<strong>Confidence:</strong> ${(service.confidence * 100).toFixed(0)}%<br>` : ''}
+                            <strong>Type:</strong> ${service.device_type || 'Unknown'}
+                        </div>
+                        <div class="service-actions">
+                            <button class="btn btn-small" onclick="configureService('${service.name}', '${ip}')">
+                                ${isConfigured ? '⚙️ Edit Config' : '➕ Configure'}
+                            </button>
+                            ${isConfigured ? `
+                                <button class="btn btn-small btn-secondary" onclick="testService('${service.name}', '${ip}')">
+                                    🔗 Test
+                                </button>
+                            ` : ''}
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                }
             }
         }
 
@@ -1426,7 +1445,7 @@
             for (const [ip, hostInfo] of Object.entries(services)) {
                 for (const service of hostInfo.services || []) {
                     const key = `${service.name}_${ip}`;
-                    if (configs[key]) {
+                    if (configs[key] || service.configured) {
                         hasConfigured = true;
                         const card = createServiceCard(service, hostInfo, ip, true);
                         grid.appendChild(card);
@@ -1468,7 +1487,7 @@
                     <div class="service-header">
                         <div>
                             <div class="service-name">
-                                <span class="service-icon">${getServiceIcon(serviceName)}</span>
+                                <span class="service-icon" data-service="${serviceName}">${getServiceIcon(serviceName)}</span>
                                 ${serviceName}
                             </div>
                             <div class="service-status">
@@ -1503,11 +1522,7 @@
 
         function createServiceCard(service, hostInfo, ip, showData = false) {
             const key = `${service.name}_${ip}`;
-                    // For manual services, check if they have API config
-                    if (service.device_type === 'manual' && !configs[key] && document.getElementById('manual-api-key')?.value) {
-                        configs[key] = { host: ip, api_key: document.getElementById('manual-api-key').value };
-                    }
-            const isConfigured = !!configs[key];
+            const isConfigured = !!configs[key] || service.configured;
             const hasData = !!collectedData[key];
             
             const card = document.createElement('div');
@@ -1516,7 +1531,7 @@
                 <div class="service-header">
                     <div>
                         <div class="service-name">
-                            <span class="service-icon">${getServiceIcon(service.name)}</span>
+                            <span class="service-icon" data-service="${service.name}">${getServiceIcon(service.name)}</span>
                             ${service.name}
                         </div>
                         <div class="service-status">
@@ -1528,7 +1543,7 @@
                 <div class="service-info">
                     <strong>Host:</strong> ${hostInfo.hostname} (${ip})<br>
                     <strong>Ports:</strong> ${service.ports.join(', ')}<br>
-                    ${service.device_type !== 'manual' ? ``<strong>Confidence:</strong> ${(service.confidence * 100).toFixed(0)}%<br>`` : ''}
+                    ${service.device_type !== 'manual' ? `<strong>Confidence:</strong> ${(service.confidence * 100).toFixed(0)}%<br>` : ''}
                     <strong>Type:</strong> ${service.device_type || 'Unknown'}
                     ${showData && hasData ? '<br>' + formatCollectedData(collectedData[key]) : ''}
                 </div>
@@ -1554,7 +1569,7 @@
                 for (const service of hostInfo.services || []) {
                     totalServices++;
                     const key = `${service.name}_${ip}`;
-                    if (configs[key]) configuredCount++;
+                    if (configs[key] || service.configured) configuredCount++;
                 }
             }
             
@@ -1575,7 +1590,6 @@
                 toast.classList.remove('show');
             }, 3000);
         }
-
 
         // Theme handling
         function toggleTheme() {
@@ -1611,12 +1625,11 @@
             }
         }
 
-
         // Initialize on load
         window.addEventListener('load', () => {
             initTheme();
             loadServices();
-            document.getElementById('services').style.display = 'block'; // Always show services section
+            document.getElementById('services').style.display = 'block';
         });
 
         // Handle modal clicks
@@ -1625,7 +1638,17 @@
                 e.target.classList.remove('active');
             }
         });
+
+        // Log function availability for debugging
+        console.log('LaDashy initialized. Functions available:', {
+            startScan: typeof startScan,
+            showManualAdd: typeof showManualAdd,
+            configureService: typeof configureService,
+            testService: typeof testService,
+            saveConfig: typeof saveConfig,
+            closeConfigModal: typeof closeConfigModal,
+            toggleTheme: typeof toggleTheme
+        });
     </script>
 </body>
 </html>
-<script src="update-icons.js"></script>

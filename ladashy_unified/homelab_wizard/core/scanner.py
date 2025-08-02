@@ -21,7 +21,7 @@ from .service_detector import ServiceDetector
 
 class NetworkScanner:
     def __init__(self):
-        self.networks = ["192.168.1.0/24"]  # Default network
+        self.networks = []  # No default network - use what user provides
         self.discovered_hosts = []
         self.scan_timeout = 1
         self.max_threads = 50

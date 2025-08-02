@@ -1,0 +1,48 @@
+{
+  "timestamp": "2025-08-01T22:10:37.449393",
+  "backend": {
+    "running": false,
+    "endpoints": {
+      "/health": {
+        "status": "error",
+        "working": false,
+        "error": "HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /api/health (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x766d053ef800>: Failed to establish a new connection: [Errno 111] Connection refused'))"
+      },
+      "/services": {
+        "status": "error",
+        "working": false,
+        "error": "HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /api/services (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x766d053eff50>: Failed to establish a new connection: [Errno 111] Connection refused'))"
+      },
+      "/scan/status": {
+        "status": "error",
+        "working": false,
+        "error": "HTTPConnectionPool(host='localhost', port=5000): Max retries exceeded with url: /api/scan/status (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x766d06098f20>: Failed to establish a new connection: [Errno 111] Connection refused'))"
+      }
+    }
+  },
+  "frontend": {
+    "index_exists": true,
+    "duplicate_const": false,
+    "script_tags_balanced": false,
+    "functions": {
+      "discoverServices": false,
+      "addManualService": true,
+      "saveServiceConfig": false,
+      "testServiceConnection": false,
+      "generateDashboard": false
+    }
+  },
+  "features": {
+    "network_scanning": false,
+    "manual_service_add": false,
+    "service_configuration": false,
+    "service_testing": false,
+    "dashboard_generation": false
+  },
+  "documentation": {
+    "progress_tracker_exists": true,
+    "section_01_status": true,
+    "section_01_complete_exists": true,
+    "conflict": "Section 01 marked complete in file but not started in Progress Tracker"
+  }
+}
